@@ -7,10 +7,13 @@
 int main(int argc, char* argv[]) {
     char userInput[40];
     while (1){
-        if (!strcmp (userInput, "quit")){
+        // fgets includes a newline character at the end of the user input automatically which is why we check for "quit\n" instead of just
+        // "quit"
+        if (!strcmp (userInput, "quit\n")){
             printf("terminating program.\n");
             break;
         }
+        // fgets includes a newline character at the end of the user input automatically
         fgets(userInput, 40, stdin);
         printf("string: %s", userInput);
 
