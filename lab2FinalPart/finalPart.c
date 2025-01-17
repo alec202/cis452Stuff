@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         fgets(userInput, 40, stdin);
-        printf("string: %s\n", userInput);
+        printf("string: %s", userInput);
 
     }
 //     if (argc < 3) {
