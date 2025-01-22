@@ -35,9 +35,9 @@ int main(int argc, char* argv[]) {
             char command[40];
             // create a copy of the command, since if we don't the next call to strtok will also modify the command variable
             // since it's just a pointer.
-            memcpy(command, tokenFromUserInput, strlen(tokenFromUserInput));
+            memcpy(command, tokenFromUserInput, strlen(tokenFromUserInput) + 1);
             printf("the tokenizedUserInput currently is: %s\n", tokenFromUserInput);
-            tokenFromUserInput = strtok(NULL, userInput);
+            tokenFromUserInput = strtok(NULL, " ");
             printf("the tokenizedUserInput after first token is generated is: %s\n", tokenFromUserInput);
             printf("command after first token is generated is: %s\n", command);
             // if (execvp(command, tokenFromUserInput) < 0) {
@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
         else {
             // this is the parent process. So, the C program will come here.
             // puts("This is the parent process printing out.");
+
         }
     }
     return 0;
