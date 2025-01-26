@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     char userInput[40]; //stores the user input
     char *args[10];     //arry to store the user command and arguements
     pid_t pid;          // process ID of the child    
-    struct rusage usage = {0}; // To capture resource usage statistics for the child
+    struct rusage usage; // To capture resource usage statistics for the child
 
     puts("This is a simple command interpreter. Enter 'quit' to exit. Otherwise, enter a command with optional arguments (e.g., 'ls -la').");
 
@@ -89,15 +89,21 @@ int main(int argc, char *argv[]) {
             }
             else
             {
+
+            int rusageSucc = getrusage(RUSAGE_CHILDREN, &usage);
+            if (rusageSucc == -1){
+                perror("getRusage Failed");
+                exit(1);
+            }
             	// Calculate user CPU time used by the child process.
-        	long seconds = usage.ru_utime.tv_sec;
-        	long microseconds = usage.ru_utime.tv_usec;
-        	double user_cpu_time = (double)seconds + (double)microseconds / 1000000.0;
+        	long int seconds = usage.ru_utime.tv_sec;
+        	long int microseconds = usage.ru_utime.tv_usec;
+        	// double user_cpu_time = (double)seconds + (double)microseconds / 1000000.0;
 
         	// Get number of involuntary context switches.
         	long involuntary_context_switches = usage.ru_nivcsw;
 
-        	printf("Child process (PID: %d) used %.6f seconds of user CPU time.\n", pid, user_cpu_time);
+        	printf("Child process (PID: %d) used %ld.%06ld seconds of user CPU time.\n", pid, seconds, microseconds);
         	printf("Child process (PID: %d) experienced %ld involuntary context switches.\n", pid, involuntary_context_switches);
             }
   
