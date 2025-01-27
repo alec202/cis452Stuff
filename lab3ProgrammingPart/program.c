@@ -15,7 +15,10 @@ int main(int argc, char *argv[]){
         while (1){
             // get a random time 0 to 5
             int timeToWait = rand() % 6;
-
+            // Wait the randomly specified amount of time.
+            sleep(timeToWait);
+            // Can just do if statement if 1 send sig usr 1 else send usr sig 2.
+            int signalToSend = rand() % 2;
         }
     } else {
         // in parent process.
