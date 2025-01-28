@@ -14,7 +14,7 @@ void handle_sigusr2(int sig) {
 }
 
 void handle_cntrl_c(int sig) {
-    printf("Signal received was Control + C\n");
+    printf("\nSignal received was Control + C\n");
     printf("Time to exit I'm shutting down...\n");
     exit(0);
 }
