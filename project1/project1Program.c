@@ -1,18 +1,79 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-int main(int argc, char *argv){
-    int kNodes;
-    char userInput[500];
-    puts("Enter how many nodes do you want there to be?");
-    int kNodeInputSuccess = scanf("%d", &kNodes);
-    if (kNodeInputSuccess != 1){
-        perror("Scanf failed to get number of nodes user wants");
+#define MAX_NODES 10
+#define MSG_SIZE 256
+#define APPLE "APPLE"
+
+typedef struct {
+    int sender;
+    int receiver;
+    char content[MSG_SIZE];
+} message_t;
+
+void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
+    close(read_pipe[1]);  // Close write-end of read_pipe
+    close(write_pipe[0]); // Close read-end of write_pipe
+
+    message_t msg;
+
+    while (1) {
+        // Read message from the previous node
+        read(read_pipe[0], &msg, sizeof(msg));
+        printf("Node %d received message: [%s] from Node %d\n", id, msg.content, msg.sender);
+
+        if (strcmp(msg.content, APPLE) == 0) {
+            if (msg.receiver == id) {
+                printf("Node %d has received its message!\n", id);
+                strcpy(msg.content, "EMPTY");
+            }
+            msg.sender = id;
+            // Send the message to the next node
+            write(write_pipe[1], &msg, sizeof(msg));
+        }
     }
-    // if we create an array of all the process Ids we will have. we can reuse one communication pipe as we
-    // loop over this array.
-    pid_t processIds[kNodeInputSuccess];
+}
 
+int main() {
+    int k;
+    printf("Enter number of nodes: ");
+    scanf("%d", &k);
+    if (k < 2 || k > MAX_NODES) {
+        printf("Invalid number of nodes (2-%d allowed).\n", MAX_NODES);
+        return EXIT_FAILURE;
+    }
 
+    int pipes[k][2]; // Pipes for communication
 
+    // Create pipes
+    for (int i = 0; i < k; i++) {
+        if (pipe(pipes[i]) == -1) {
+            perror("pipe");
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Spawn processes
+    for (int i = 0; i < k; i++) {
+        pid_t pid = fork();
+        if (pid == 0) { // Child process
+            node_process(i, k, pipes[i], pipes[(i + 1) % k]);
+            exit(0);
+        }
+    }
+
+    // Initial message from Node 0
+    message_t init_msg = {0, rand() % k, APPLE};
+
+    // Write to the first node
+    write(pipes[0][1], &init_msg, sizeof(init_msg));
+
+    // Wait for all child processes
+    for (int i = 0; i < k; i++) wait(NULL);
+
+    return 0;
 }
