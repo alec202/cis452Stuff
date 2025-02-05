@@ -6,7 +6,6 @@
 
 // shared storage for keeping track of the number of files accessed like the lab asks.
 int fileRequestsReceived = 0;
-char* filesEntered[100];
 pthread_t* activeThreads[100];
 int numOfThreads = 0;
 int numFilesEntered = 0;
@@ -14,28 +13,38 @@ void* executionThread(void* fileNamePassedToFunction);
 
 void output(){
     printf("Total file requests received was %d.\n", fileRequestsReceived);
-    for (int i=0; i < 100; i++){
-        free(filesEntered[i]);
+        // we want to join any threads that are still active.
+        // Loop over our active thread pointer array
+        for (int i = 0; i < 100; i++){
+        void* result1;
+        int joinStatus;
+        // get the thread id pointer for the thread at the current index.
+        pthread_t *threadID = activeThreads[i];
+        // make sure the thread is active (if it's not equal to NULL).
+        if (threadID != NULL){
+            // If the thread is active we have to clean it up.
+            joinStatus = pthread_join(*threadID, &result1);
+            if (joinStatus != 0) {
+                fprintf (stderr, "Join error %d: %s\n", joinStatus, strerror(joinStatus));
+                exit(1);
+            }
+
+        }
     }
+
 }
 
 // setup control c handler.
 void handle_cntrl_c(int sig) {
     printf("\nSignal received was Control + C\n");
     output();
-     void* result1;
-    int joinStatus;
-    joinStatus = pthread_join(thread1ID, &result1);
-    if (joinStatus != 0) {
-        fprintf (stderr, "Join error %d: %s\n", joinStatus, strerror(joinStatus));
-        exit(1);
-        }
 }
 
 int main(){
-    // Initialize all elements to 0
-    memset(activeThreads, 0, sizeof(activeThreads));
-
+    // Initialize all elements to NULL
+    for (int i = 0; i < 100; i++) {
+        activeThreads[i] = NULL;
+    }
     int threadCreationSuccess;
     char fileToAccess[20];
     puts("This is a program to simulate file accesses.");
@@ -60,7 +69,7 @@ int main(){
         if (strcmp(fileToAccess, "quit") == 0){
             break;
         }
-        // malloc-ing space on heap for our active threads array.
+        // We have to malloc and use the heap like professor said in class otherwise when passing file input this variable will be changed to the last input in the file.
         pthread_t *threadID = malloc(sizeof(pthread_t)); // Allocate memory for thread ID
         // make sure malloc was succesful.
         if (threadID == NULL) {
@@ -72,7 +81,6 @@ int main(){
         // now that we know the name of the file we want to access let's make the child thread.
         char* fileNameCopy = strdup(fileToAccess); // Duplicate file name
         // put this in our shared memory space
-        filesEntered[numFilesEntered] = fileNameCopy;
         // put the threadID in our active threads array.
         activeThreads[numOfThreads] = threadID;
         // increment the number of threads
@@ -82,6 +90,8 @@ int main(){
         // make sure the thread was created successfully.
         if (threadCreationSuccess != 0){
             fprintf (stderr, "thread create error %d: %s\n", threadCreationSuccess, strerror(threadCreationSuccess));
+            free(fileNameCopy);
+            free(threadID);
         }
     }
 
@@ -109,14 +119,16 @@ void* executionThread(void* fileNamePassedToFunction){
     pthread_t thisThreadsID = pthread_self();
     // looop through active threads list so we can change it to say this thread is inactive.
     for (int i = 0; i < 100; i++){
-        // check if the thread ID is equal at this index in the array to this threads ID
-        if (pthread_equal(thisThreadsID, activeThreads[i])){
-            // if the thread ID of this thread is equal to the thread ID at this index, change the thread ID at this index to 0
-            activeThreads[i] = 0;
+        // check if the thread ID at this index in the array is equal to this current threads ID.
+        // DO NOT CHANGE activeThreads[i] to *activeThreads[i]. IT will make the program unable to terminate.
+        if (activeThreads[i] != NULL && pthread_equal(thisThreadsID, activeThreads[i])){
+            // if the thread ID of this thread is equal to the thread ID at this index, change the thread ID at this index to NULL
+            free(activeThreads[i]);
+            activeThreads[i] = NULL;
         }
     }
     // decrement the number of active threads since we are finished with this thread.
+    free(fileName);
     numOfThreads--;
-
     return NULL;
 }
