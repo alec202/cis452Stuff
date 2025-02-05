@@ -7,19 +7,29 @@
 // shared storage for keeping track of the number of files accessed like the lab asks.
 int fileRequestsReceived = 0;
 pthread_t thread1ID;
+char* filesEntered[100];
+int numFilesEntered = 0;
 void* executionThread(void* fileNamePassedToFunction);
 
-// setup control c handler.
-void handle_cntrl_c(int sig) {
-    printf("\nSignal received was Control + C\n");
+void output(){
     printf("Total file requests received was %d.\n", fileRequestsReceived);
     void* result1;
     int joinStatus;
     joinStatus = pthread_join(thread1ID, &result1);
     if (joinStatus != 0) {
         fprintf (stderr, "Join error %d: %s\n", joinStatus, strerror(joinStatus));
+        exit(1);
         }
     exit(0);
+}
+
+// setup control c handler.
+void handle_cntrl_c(int sig) {
+    printf("\nSignal received was Control + C\n");
+    output();
+    for (int i=0; i < 100; i++){
+        free(filesEntered[i]);
+    }
 }
 
 int main(){
@@ -50,13 +60,16 @@ int main(){
 
         fileRequestsReceived++;
         // now that we know the name of the file we want to access let's make the child thread.
-        threadCreationSuccess = pthread_create(&thread1ID, NULL, executionThread, fileToAccess);
-        // make sure the thread was created successfully.
+        char* fileNameCopy = strdup(fileToAccess); // Duplicate file name
+        filesEntered[numFilesEntered] = fileNameCopy;
+        numFilesEntered++;
+        threadCreationSuccess = pthread_create(&thread1ID, NULL, executionThread, fileNameCopy);        // make sure the thread was created successfully.
         if (threadCreationSuccess != 0){
             fprintf (stderr, "thread create error %d: %s\n", threadCreationSuccess, strerror(threadCreationSuccess));
         }
     }
 
+    output();
     puts("End of program, goodbye.");
     return 0;
 }
@@ -76,5 +89,7 @@ void* executionThread(void* fileNamePassedToFunction){
         sleep(1);
     }
     printf("File %s has been accessed successfully.\n", fileName);
+    free(fileName); // Free the allocated memory
+
     return NULL;
 }
