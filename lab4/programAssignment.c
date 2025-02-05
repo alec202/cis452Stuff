@@ -6,33 +6,36 @@
 
 // shared storage for keeping track of the number of files accessed like the lab asks.
 int fileRequestsReceived = 0;
-pthread_t thread1ID;
 char* filesEntered[100];
+pthread_t* activeThreads[100];
+int numOfThreads = 0;
 int numFilesEntered = 0;
 void* executionThread(void* fileNamePassedToFunction);
 
 void output(){
     printf("Total file requests received was %d.\n", fileRequestsReceived);
-    void* result1;
-    int joinStatus;
-    joinStatus = pthread_join(thread1ID, &result1);
-    if (joinStatus != 0) {
-        fprintf (stderr, "Join error %d: %s\n", joinStatus, strerror(joinStatus));
-        exit(1);
-        }
-    exit(0);
+    for (int i=0; i < 100; i++){
+        free(filesEntered[i]);
+    }
 }
 
 // setup control c handler.
 void handle_cntrl_c(int sig) {
     printf("\nSignal received was Control + C\n");
     output();
-    for (int i=0; i < 100; i++){
-        free(filesEntered[i]);
-    }
+     void* result1;
+    int joinStatus;
+    joinStatus = pthread_join(thread1ID, &result1);
+    if (joinStatus != 0) {
+        fprintf (stderr, "Join error %d: %s\n", joinStatus, strerror(joinStatus));
+        exit(1);
+        }
 }
 
 int main(){
+    // Initialize all elements to 0
+    memset(activeThreads, 0, sizeof(activeThreads));
+
     int threadCreationSuccess;
     char fileToAccess[20];
     puts("This is a program to simulate file accesses.");
@@ -57,13 +60,26 @@ int main(){
         if (strcmp(fileToAccess, "quit") == 0){
             break;
         }
+        // malloc-ing space on heap for our active threads array.
+        pthread_t *threadID = malloc(sizeof(pthread_t)); // Allocate memory for thread ID
+        // make sure malloc was succesful.
+        if (threadID == NULL) {
+            perror("Failed to allocate memory for thread ID");
+            return 1;
+        }
 
         fileRequestsReceived++;
         // now that we know the name of the file we want to access let's make the child thread.
         char* fileNameCopy = strdup(fileToAccess); // Duplicate file name
+        // put this in our shared memory space
         filesEntered[numFilesEntered] = fileNameCopy;
+        // put the threadID in our active threads array.
+        activeThreads[numOfThreads] = threadID;
+        // increment the number of threads
         numFilesEntered++;
-        threadCreationSuccess = pthread_create(&thread1ID, NULL, executionThread, fileNameCopy);        // make sure the thread was created successfully.
+        numOfThreads++;
+        threadCreationSuccess = pthread_create(threadID, NULL, executionThread, fileNameCopy);        
+        // make sure the thread was created successfully.
         if (threadCreationSuccess != 0){
             fprintf (stderr, "thread create error %d: %s\n", threadCreationSuccess, strerror(threadCreationSuccess));
         }
@@ -89,7 +105,18 @@ void* executionThread(void* fileNamePassedToFunction){
         sleep(1);
     }
     printf("File %s has been accessed successfully.\n", fileName);
-    free(fileName); // Free the allocated memory
+    // get the ID of this thread.
+    pthread_t thisThreadsID = pthread_self();
+    // looop through active threads list so we can change it to say this thread is inactive.
+    for (int i = 0; i < 100; i++){
+        // check if the thread ID is equal at this index in the array to this threads ID
+        if (pthread_equal(thisThreadsID, activeThreads[i])){
+            // if the thread ID of this thread is equal to the thread ID at this index, change the thread ID at this index to 0
+            activeThreads[i] = 0;
+        }
+    }
+    // decrement the number of active threads since we are finished with this thread.
+    numOfThreads--;
 
     return NULL;
 }
