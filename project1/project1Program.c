@@ -7,7 +7,6 @@
 
 #define MAX_NODES 10
 #define MSG_SIZE 256
-#define APPLE "APPLE"
 
 typedef struct {
     int sender;
@@ -47,9 +46,10 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    // create k pipes with size 2 to specify read vs. write
     int pipes[k][2]; // Pipes for communication
 
-    // Create pipes
+    // Create pipes at each index of the 2D pipe array
     for (int i = 0; i < k; i++) {
         if (pipe(pipes[i]) == -1) {
             perror("pipe");
@@ -66,11 +66,23 @@ int main() {
         }
     }
 
-    // Initial message from Node 0
-    message_t init_msg = {0, rand() % k, APPLE};
+    // we will want to be able to enter a message more than once.
+    while (1){
+        // get the input to send in the apple.
+        int nodeToSendMessageTo;
+        puts("Enter the node number you want to send a message to:");
+        scanf("%d", &nodeToSendMessageTo); 
+        char messageToSend[MSG_SIZE];
+        printf("Enter the message you want to send. Maximum message size is: %d", MSG_SIZE);
+        // we have to use fgets since we want to be able to take multi word messages
+        fgets(messageToSend, MSG_SIZE, stdin);
+        // got the input for the apple, now package apple and write to the first pipe.
+        message_t init_msg = {0, nodeToSendMessageTo, messageToSend};
+        
+        // Write to the first node
+        write(pipes[0][1], &init_msg, sizeof(init_msg));
 
-    // Write to the first node
-    write(pipes[0][1], &init_msg, sizeof(init_msg));
+    }
 
     // Wait for all child processes
     for (int i = 0; i < k; i++) wait(NULL);
