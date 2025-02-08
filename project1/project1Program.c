@@ -23,17 +23,29 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
     while (1) {
         // Read message from the previous node
         read(read_pipe[0], &msg, sizeof(msg));
-        printf("Node %d received message: [%s] from Node %d\n", id, msg.content, msg.sender);
-
-        if (strcmp(msg.content, APPLE) == 0) {
-            if (msg.receiver == id) {
-                printf("Node %d has received its message!\n", id);
-                strcpy(msg.content, "EMPTY");
-            }
-            msg.sender = id;
-            // Send the message to the next node
-            write(write_pipe[1], &msg, sizeof(msg));
+        printf("Node %d received the apple.\n", id);
+        if (msg.receiver == id){
+            printf("The message was intended for this node (%d)\n", id);
+            char msgReceivedStatus[MSG_SIZE] = "empty\0";
+            strncpy(msg.content, msgReceivedStatus, MSG_SIZE - 1);
+            msg.content[MSG_SIZE - 1] = '\0';
+        } else {
+            printf("The message was not intended for this node (%d). Will be sending the apple to the next node.\n", id);
         }
+        
+        msg.sender = id;
+        // Send the message to the next node
+        write(write_pipe[1], &msg, sizeof(msg));
+        // dfssdfdsfsd
+        
+        // if (strcmp(msg.content, APPLE) == 0) {
+        //     if (msg.receiver == id) {
+        //         printf("Node %d has received its message!\n", id);
+        //         strcpy(msg.content, "EMPTY");
+        //     }
+        // }
+
+        //  dfsdfsdfds
     }
 }
 
@@ -45,7 +57,8 @@ int main() {
         printf("Invalid number of nodes (2-%d allowed).\n", MAX_NODES);
         return EXIT_FAILURE;
     }
-
+    // there should be k + 1 nodes in reality since node 0 (the parent) doesn't count.
+    k++;
     // create k pipes with size 2 to specify read vs. write
     int pipes[k][2]; // Pipes for communication
 
@@ -58,7 +71,7 @@ int main() {
     }
 
     // Spawn processes
-    for (int i = 0; i < k; i++) {
+    for (int i = 1; i < k; i++) {
         pid_t pid = fork();
         if (pid == 0) { // Child process
             node_process(i, k, pipes[i], pipes[(i + 1) % k]);
@@ -68,24 +81,42 @@ int main() {
 
     // we will want to be able to enter a message more than once.
     while (1){
+        close(pipes[0][1]);  // Close write-end of read pipe, pipe 0
+        close(pipes[1][0]); // Close read-end of write pipe, pipe 1 since we will be writing to that pipe.
         // get the input to send in the apple.
         int nodeToSendMessageTo;
         puts("Enter the node number you want to send a message to:");
-        scanf("%d", &nodeToSendMessageTo); 
+        scanf(" %d", &nodeToSendMessageTo); 
+        getchar();
         char messageToSend[MSG_SIZE];
-        printf("Enter the message you want to send. Maximum message size is: %d", MSG_SIZE);
+        printf("Enter the message you want to send. Maximum message size is: %d\n", MSG_SIZE);
         // we have to use fgets since we want to be able to take multi word messages
         fgets(messageToSend, MSG_SIZE, stdin);
         // got the input for the apple, now package apple and write to the first pipe.
-        message_t init_msg = {0, nodeToSendMessageTo, messageToSend};
+        // initialize the apple. We can't just use the direct message to send because C doesn't allow for direct
+        // assignment. We have to copy the data from the source array to the destination array.
+        message_t init_msg = {0, nodeToSendMessageTo, ""};
+        // copy the messageToSend into msg.content
+        strncpy(init_msg.content, messageToSend, MSG_SIZE - 1);
+        // ensure the last character is the null terminator.
+        init_msg.content[MSG_SIZE - 1] = '\0';
+        puts("\ngot here\n");
         
         // Write to the first node
-        write(pipes[0][1], &init_msg, sizeof(init_msg));
-
+        write(pipes[1][1], &init_msg, sizeof(init_msg));
+        // Wait for all child processes
+        for (int i = 0; i < k; i++){
+            wait(NULL);
+        }
+        read(pipes[0][0], &init_msg, MSG_SIZE);
+        if (strcmp(init_msg.content, "empty\0") == 0){
+            puts("ITS BEEN THROUGH FULL LOOP");
+            exit(0);
+        } else {
+            puts("NO FULL LOOP");
+        }
     }
 
-    // Wait for all child processes
-    for (int i = 0; i < k; i++) wait(NULL);
 
     return 0;
 }
