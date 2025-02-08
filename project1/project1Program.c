@@ -29,6 +29,7 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
             char msgReceivedStatus[MSG_SIZE] = "empty\0";
             strncpy(msg.content, msgReceivedStatus, MSG_SIZE - 1);
             msg.content[MSG_SIZE - 1] = '\0';
+            printf("\nthe contents of the message after modification: %s\n", msg.content);
         } else {
             printf("The message was not intended for this node (%d). Will be sending the apple to the next node.\n", id);
         }
@@ -100,14 +101,11 @@ int main() {
         strncpy(init_msg.content, messageToSend, MSG_SIZE - 1);
         // ensure the last character is the null terminator.
         init_msg.content[MSG_SIZE - 1] = '\0';
-        puts("\ngot here\n");
         
         // Write to the first node
         write(pipes[1][1], &init_msg, sizeof(init_msg));
-        // Wait for all child processes
-        for (int i = 0; i < k; i++){
-            wait(NULL);
-        }
+        // read from buffer        
+        puts("ALL PROCESSES DONE");
         read(pipes[0][0], &init_msg, MSG_SIZE);
         if (strcmp(init_msg.content, "empty\0") == 0){
             puts("ITS BEEN THROUGH FULL LOOP");
