@@ -57,14 +57,19 @@ int main(int argc, char *argv[])
         exit(0);
     }
     else
+    // parent process
         for (i = 0; i < loop; i++)
         {
+            temp = sharedMemoryPointer[1];
+            sharedMemoryPointer[1] = sharedMemoryPointer[0];
+            sharedMemoryPointer[0] = temp; 
             // swap the contents of sharedMemoryPointer[1] and sharedMemoryPointer[0]
         }
 
     wait(&status);
-    printf("Values: %li\t%li\n", sharedMemoryPointer[0],
-           sharedMemoryPointer[1]);
+    // sharedMemoryPointer[0] initially was 0
+    // sharedMemoryPointer[1] initially was 1
+    printf("Values: shared Memory pointer [0] %li\t shared memory pointer [1] %li\n", sharedMemoryPointer[0], sharedMemoryPointer[1]);
     if (shmdt(sharedMemoryPointer) < 0)
     {
         perror("Unable to detach\n");
