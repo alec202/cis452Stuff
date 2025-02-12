@@ -22,14 +22,21 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
 
     while (1) {
         // Read message from the previous node
+        close(read_pipe[1]);
+        close(write_pipe[0]);
         read(read_pipe[0], &msg, sizeof(msg));
         printf("Node %d received the apple.\n", id);
         if (msg.receiver == id){
             printf("The message was intended for this node (%d)\n", id);
+            // copy the message into variable message
+            char message[MSG_SIZE];
+            strncpy(message, msg.content, MSG_SIZE);
+            printf("The message was: %s", message);
+            // set the message content to 'empty'
             char msgReceivedStatus[MSG_SIZE] = "empty\0";
             strncpy(msg.content, msgReceivedStatus, MSG_SIZE - 1);
             msg.content[MSG_SIZE - 1] = '\0';
-            printf("\nthe contents of the message after modification: %s\n", msg.content);
+            printf("The contents of the message have been replaced with: %s\n", msg.content);
         } else {
             printf("The message was not intended for this node (%d). Will be sending the apple to the next node.\n", id);
         }
@@ -37,16 +44,6 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
         msg.sender = id;
         // Send the message to the next node
         write(write_pipe[1], &msg, sizeof(msg));
-        // dfssdfdsfsd
-        
-        // if (strcmp(msg.content, APPLE) == 0) {
-        //     if (msg.receiver == id) {
-        //         printf("Node %d has received its message!\n", id);
-        //         strcpy(msg.content, "EMPTY");
-        //     }
-        // }
-
-        //  dfsdfsdfds
     }
 }
 
@@ -61,7 +58,7 @@ int main() {
     // there should be k + 1 nodes in reality since node 0 (the parent) doesn't count.
     k++;
     // create k pipes with size 2 to specify read vs. write
-    int pipes[k][2]; // Pipes for communication
+    int pipes[k - 1][2]; // Pipes for communication
 
     // Create pipes at each index of the 2D pipe array
     for (int i = 0; i < k; i++) {
@@ -105,16 +102,13 @@ int main() {
         // Write to the first node
         write(pipes[1][1], &init_msg, sizeof(init_msg));
         // read from buffer        
+        read(pipes[0][0], &init_msg, sizeof(init_msg));
         puts("ALL PROCESSES DONE");
-        read(pipes[0][0], &init_msg, MSG_SIZE);
         if (strcmp(init_msg.content, "empty\0") == 0){
             puts("ITS BEEN THROUGH FULL LOOP");
-            exit(0);
-        } else {
-            puts("NO FULL LOOP");
+            puts("Send another message!");
         }
     }
-
 
     return 0;
 }
