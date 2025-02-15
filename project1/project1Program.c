@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -46,6 +47,13 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
         write(write_pipe[1], &msg, sizeof(msg));
     }
 }
+
+void handleCntrlC(int sig) {
+    printf("\nSignal received was Control + C\n");
+    printf("Time to exit I'm shutting down...\n");
+    exit(0);
+}
+
 
 int main() {
     int k;
@@ -104,6 +112,11 @@ int main() {
         // read from buffer        
         read(pipes[0][0], &init_msg, sizeof(init_msg));
         puts("ALL PROCESSES DONE");
+        
+          // Set up the SIGINT (Control+C) handler
+        if (signal(SIGINT, handleCntrlC) == SIG_ERR) {
+            perror("Error setting up signal handler for SIGINT");
+        }
         if (strcmp(init_msg.content, "empty\0") == 0){
             puts("ITS BEEN THROUGH FULL LOOP");
             puts("Send another message!");
