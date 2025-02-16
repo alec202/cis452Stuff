@@ -106,20 +106,47 @@ int main() {
         strncpy(init_msg.content, messageToSend, MSG_SIZE - 1);
         // ensure the last character is the null terminator.
         init_msg.content[MSG_SIZE - 1] = '\0';
-        
-        // Write to the first node
-        write(pipes[1][1], &init_msg, sizeof(init_msg));
-        // read from buffer        
-        read(pipes[0][0], &init_msg, sizeof(init_msg));
-        puts("ALL PROCESSES DONE");
-        
-          // Set up the SIGINT (Control+C) handler
-        if (signal(SIGINT, handleCntrlC) == SIG_ERR) {
-            perror("Error setting up signal handler for SIGINT");
-        }
-        if (strcmp(init_msg.content, "empty\0") == 0){
-            puts("ITS BEEN THROUGH FULL LOOP");
-            puts("Send another message!");
+        if (init_msg.receiver == 0){
+            // if the destination node for the message is the parent, then we will handle this scenario in a more unique way.
+            printf("The message was intended for this node (0)\n");
+            // copy the message into variable message
+            char message[MSG_SIZE];
+            strncpy(message, init_msg.content, MSG_SIZE);
+            printf("The message was: %s", message);
+            // set the message content to 'empty'
+            char msgReceivedStatus[MSG_SIZE] = "empty\0";
+            strncpy(init_msg.content, msgReceivedStatus, MSG_SIZE - 1);
+            init_msg.content[MSG_SIZE - 1] = '\0';
+            printf("The contents of the message have been replaced with: %s\n", init_msg.content);
+            puts("ALL PROCESSES DONE");
+            if (strcmp(init_msg.content, "empty\0") == 0){
+                puts("ITS BEEN THROUGH FULL LOOP");
+                puts("Send another message!");
+            }
+            // since the message has been sent a received since the destination node was the parent node, we should re-prompt the user
+            // while skipping the code below since we don't need to go through a whole loop since it was
+            // to the parent node. So we will skip this iteration's code below with the continue statement.
+            continue;
+        } else {
+            // node 0 has already viewed the destination node and determined it's not for them so now we still
+            // have to print out the debugging info and then send it to the next node, node 1.
+            puts("Node 0 received the apple.");
+            puts("The message was not intended for this node (0). Will be sending the apple to the next node.");
+
+            // Write to the first node
+            write(pipes[1][1], &init_msg, sizeof(init_msg));
+            // read from buffer        
+            read(pipes[0][0], &init_msg, sizeof(init_msg));
+            puts("ALL PROCESSES DONE");
+            
+            // Set up the SIGINT (Control+C) handler
+            if (signal(SIGINT, handleCntrlC) == SIG_ERR) {
+                perror("Error setting up signal handler for SIGINT");
+            }
+            if (strcmp(init_msg.content, "empty\0") == 0){
+                puts("ITS BEEN THROUGH FULL LOOP");
+                puts("Send another message!");
+            }
         }
     }
 
