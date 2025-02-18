@@ -71,7 +71,7 @@ int main() {
     // Create pipes at each index of the 2D pipe array
     for (int i = 0; i < k; i++) {
         if (pipe(pipes[i]) == -1) {
-            perror("pipe");
+            perror("pipe creation failed.");
             return EXIT_FAILURE;
         }
     }
