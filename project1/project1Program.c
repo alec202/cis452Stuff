@@ -94,6 +94,10 @@ int main() {
         puts("Enter the node number you want to send a message to:");
         scanf(" %d", &nodeToSendMessageTo); 
         getchar();
+        if (nodeToSendMessageTo > k - 1 || nodeToSendMessageTo < 0){
+            printf("Node entered must be within range 0 - %d. Try again!\n", (k - 1));
+            continue;
+        }
         char messageToSend[MSG_SIZE];
         printf("Enter the message you want to send. Maximum message size is: %d\n", MSG_SIZE);
         // we have to use fgets since we want to be able to take multi word messages
@@ -120,7 +124,7 @@ int main() {
             printf("The contents of the message have been replaced with: %s\n", init_msg.content);
             puts("ALL PROCESSES DONE");
             if (strcmp(init_msg.content, "empty\0") == 0){
-                puts("ITS BEEN THROUGH FULL LOOP");
+                puts("Message has reached the beginning node");
                 puts("Send another message!");
             }
             // since the message has been sent a received since the destination node was the parent node, we should re-prompt the user
@@ -144,7 +148,7 @@ int main() {
                 perror("Error setting up signal handler for SIGINT");
             }
             if (strcmp(init_msg.content, "empty\0") == 0){
-                puts("ITS BEEN THROUGH FULL LOOP");
+                puts("Message has reached the beginning node");
                 puts("Send another message!");
             }
         }
