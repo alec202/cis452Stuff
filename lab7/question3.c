@@ -1,28 +1,41 @@
 #include <stdio.h>
-#include <sys/stat.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/sem.h>
 
 int main()
 {
-    int shmId;
-    char *sharedMemoryPtr;
-    struct shmid_ds shm_info;
+    union semun {
+        int val;
+        struct semid_ds *buf;
+        unsigned short *array;
+    } arg;
+    arg.val = 1;
 
-    for (long int i = 4096; i < 2147483647; i++)
-    if ((shmId = shmget(IPC_PRIVATE, i, IPC_CREAT | S_IRUSR | S_IWUSR)) < 0)
-    {
-        printf("Maximum Shared memory size reached. It's : %ld\n", i);
-        perror("Unable to get shared memory\n");
-        return (1);
-    } else {
-        // Successfully created the shared memory so this i value isn't the limit, so lets remove it and then let the loop continue
-            if (shmctl(shmId, IPC_RMID, 0) < 0)
-        {
-            perror("Unable to deallocate\n");
-            return (1);
-         }
+    int semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);
+    if (semid == -1) {
+        perror("semget failed");
+        exit(1);
+    }
+
+    for (long int i = 4096; i < 2147483647; i++){
+        arg.val = i;
+        if (semctl(semid, 0, SETVAL, arg) == -1) {
+            printf("Maximum counting semaphore value: %ld\n", i);
+            perror("semctl SETVAL failed");
+            break;
+        }
 
     }
-    puts("The Maximum size for shared memory possible was not reached");
+
+    if (semctl(semid, 0, IPC_RMID) == -1) {
+        perror("semctl IPC_RMID failed");
+    }
+    puts("The Maximum value for a semaphore was not reached");
     return 0;
 }
