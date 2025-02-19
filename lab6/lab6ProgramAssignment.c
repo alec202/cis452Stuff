@@ -18,11 +18,13 @@ typedef struct {
 void sem_wait(int semid) {
     struct sembuf sb = {0, -1, 0}; 
     semop(semid, &sb, 1);
+    //printf("waits\n");
 }
 
 void sem_signal(int semid) {
     struct sembuf sb = {0, 1, 0}; 
     semop(semid, &sb, 1);
+    //printf("signals\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -33,7 +35,8 @@ int main(int argc, char *argv[]) {
 
     int status;
     long int i, loop, temp, *sharedMemoryPointer;
-    int sharedMemoryID, semid;
+    int sharedMemoryID;
+    int semid;
     pid_t pid;
 
     loop = atoi(argv[1]);
@@ -53,7 +56,11 @@ int main(int argc, char *argv[]) {
 
     sharedMemoryPointer[0] = 0;
     sharedMemoryPointer[1] = 1;
-
+    
+    // Create semaphore from lab
+    semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);
+    semctl(semid, 0, SETVAL, 1); // Initialize semaphore to 1
+    
     pid = fork();
     if (pid < 0) {
         perror("Fork failed");
@@ -62,28 +69,35 @@ int main(int argc, char *argv[]) {
 
     if (pid == 0) { // Child process
         for (i = 0; i < loop; i++) {
+            //printf("child entered\n");
             sem_wait(semid);
             temp = sharedMemoryPointer[0];
             sharedMemoryPointer[0] = sharedMemoryPointer[1];
             sharedMemoryPointer[1] = temp;
             sem_signal(semid);
+            //printf("child exits\n");
         }
         shmdt(sharedMemoryPointer);
         exit(0);
     } else { // Parent process
         for (i = 0; i < loop; i++) {
-            
+            //printf("Parent entered\n");
+            sem_wait(semid);
             temp = sharedMemoryPointer[1];
             sharedMemoryPointer[1] = sharedMemoryPointer[0];
             sharedMemoryPointer[0] = temp;
+            sem_signal(semid);
+            //printf("Parent exits\n");
             
         }
         wait(&status);
         printf("Values: %li\t%li\n", sharedMemoryPointer[0], sharedMemoryPointer[1]);
 
-        // Cleanup
+        // destroy shared memory
         shmdt(sharedMemoryPointer);
         shmctl(sharedMemoryID, IPC_RMID, 0);
+        // Remove semaphore
+        semctl(semid, 0, IPC_RMID); 
         
     }
 
