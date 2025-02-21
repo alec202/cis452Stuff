@@ -15,6 +15,9 @@ typedef struct {
     char content[MSG_SIZE];
 } message_t;
 
+// professor said during lab 10 is good to have as a max node amount.
+pid_t children[MAX_NODES];
+
 void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
     close(read_pipe[1]);  // Close write-end of read_pipe
     close(write_pipe[0]); // Close read-end of write_pipe
@@ -51,6 +54,19 @@ void node_process(int id, int k, int read_pipe[2], int write_pipe[2]) {
 void handleCntrlC(int sig) {
     printf("\nSignal received was Control + C\n");
     printf("Time to exit I'm shutting down...\n");
+    for (int i = 0; i < MAX_NODES; i++){
+        if (kill(children[i], SIGTERM) == 0) {
+            printf("Killed child with PID: %d\n", children[i]);
+        } else {
+            printf("kill failed for child with PID %d\n", children[i]);
+            perror("kill");
+        }
+    }
+    exit(0);
+}
+
+void handleSigTerm(int sig) {
+    printf("Received SIGTERM, shutting down gracefully...\n");
     exit(0);
 }
 
@@ -83,6 +99,18 @@ int main() {
             node_process(i, k, pipes[i], pipes[(i + 1) % k]);
             exit(0);
         }
+        // outside of the child process, lets add this pid to our shared memory for our control + c handler.
+        children[i - 1] = pid;
+    }
+
+    // Set up the SIGINT (Control+C) handler
+    if (signal(SIGINT, handleCntrlC) == SIG_ERR) {
+        perror("Error setting up signal handler for SIGINT");
+    }
+    
+     // Set up SIGTERM handler to avoid "Terminated: 15" message
+    if (signal(SIGTERM, handleSigTerm) == SIG_ERR) {
+        perror("Error setting up signal handler for SIGTERM");
     }
 
     // we will want to be able to enter a message more than once.
@@ -93,6 +121,8 @@ int main() {
         int nodeToSendMessageTo;
         puts("Enter the node number you want to send a message to:");
         scanf(" %d", &nodeToSendMessageTo); 
+        // include getchar() to prevent the bug when entering data in, assuming it has to do with
+        // enter symbol being left over or something.
         getchar();
         if (nodeToSendMessageTo > k - 1 || nodeToSendMessageTo < 0){
             printf("Node entered must be within range 0 - %d. Try again!\n", (k - 1));
@@ -143,10 +173,6 @@ int main() {
             read(pipes[0][0], &init_msg, sizeof(init_msg));
             puts("ALL PROCESSES DONE");
             
-            // Set up the SIGINT (Control+C) handler
-            if (signal(SIGINT, handleCntrlC) == SIG_ERR) {
-                perror("Error setting up signal handler for SIGINT");
-            }
             if (strcmp(init_msg.content, "empty\0") == 0){
                 puts("Message has reached the beginning node");
                 puts("Send another message!");
