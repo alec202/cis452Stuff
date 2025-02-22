@@ -75,13 +75,13 @@ int main() {
     int k;
     printf("Enter number of nodes: ");
     scanf("%d", &k);
-    if (k < 2 || k > MAX_NODES) {
-        printf("Invalid number of nodes (2-%d allowed).\n", MAX_NODES);
+    if (k < 0 || k > MAX_NODES) {
+        printf("Invalid number of nodes (1-%d allowed).\n", MAX_NODES);
         return EXIT_FAILURE;
     }
     // there should be k + 1 nodes in reality since node 0 (the parent) doesn't count.
     k++;
-    // create k pipes with size 2 to specify read vs. write
+    // create k elements to represent the pipes with size 2 to specify read vs. write
     int pipes[k - 1][2]; // Pipes for communication
 
     // Create pipes at each index of the 2D pipe array
@@ -121,7 +121,7 @@ int main() {
         int nodeToSendMessageTo;
         puts("Enter the node number you want to send a message to:");
         scanf(" %d", &nodeToSendMessageTo); 
-        // include getchar() to prevent the bug when entering data in, assuming it has to do with
+        // include getchar() to prevent the bug when entering data in, I'm assuming it has to do with the
         // enter symbol being left over or something.
         getchar();
         if (nodeToSendMessageTo > k - 1 || nodeToSendMessageTo < 0){
