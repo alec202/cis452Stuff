@@ -27,10 +27,7 @@ int main(int argc, char *argv[])
             perror("Program error with the stat command:  ");
             exit(1);
         } 
-        printf("%-20s size: %llu Bytes\n", entryPtr->d_name, fileStatBuff.st_size);
-        // print out the inode number
-        printf("inode value is: %llu\n", fileStatBuff.st_ino);
-
+        printf("%-20s\tThe user ID is: %u, the group ID is: %u. The inode value is: %llu\n", entryPtr->d_name, fileStatBuff.st_uid, fileStatBuff.st_gid, fileStatBuff.st_ino);
     }
     closedir(dirPtr);    
     return 0;
