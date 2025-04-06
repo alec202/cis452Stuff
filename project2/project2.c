@@ -6,9 +6,11 @@
 #include <unistd.h>
 
 #define COLOR_RED "\033[0;31m"
-#define COLOR_BLUE "\033[0;34m"
-#define COLOR_YELLOW "\033[0;33m"
 #define COLOR_GREEN "\033[0;32m"
+#define COLOR_YELLOW "\033[0;33m"
+#define COLOR_BLUE "\033[0;34m"
+#define COLOR_MAGENTA "\033[0;35m"
+#define COLOR_CYAN "\033[0;35m"
 
 // Pantry structure in shared memory
 typedef struct {
@@ -23,15 +25,24 @@ typedef struct {
 // Kitchen structure in shared memory
 typedef struct {
     int bowls;        
-    int spoons;       
+    int spoons;   
+    int mixer;
 } Kitchen;
 
 // Baker's local resource tracking
 typedef struct {
     int flour;
     int sugar;
+    int yeast;
+    int baking_soda;
+    int salt;
+    int caramel;
+    int eggs;
+    int milk;
+    int butter;
     int has_bowl;
     int has_spoon;
+    int has_mixer
 } BakerResources;
 
 // Thread data structure
@@ -56,10 +67,13 @@ void sem_signal(int semid, int sem_num) {
 // ANSI color codes array
 const char* COLORS[] = {
     COLOR_RED,
-    COLOR_BLUE,
+    COLOR_GREEN,
     COLOR_YELLOW,
-    COLOR_GREEN
+    COLOR_BLUE,
+    COLOR_MAGENTA,
+    COLOR_CYAN
 };
+
 const int NUM_COLORS = 6;
 const char* RESET_COLOR = "\033[0m"; // Reset to default color
 
@@ -123,6 +137,7 @@ void* baker_function(void* arg) {
            baker_id, kitchen_ptr->spoons);
     print_baker_state(baker_id, resources);
 
+    //
     free(data->resources);
     free(data);
     return NULL;
