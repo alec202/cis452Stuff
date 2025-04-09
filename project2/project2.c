@@ -74,6 +74,57 @@ const char* COLORS[] = {
     COLOR_CYAN
 };
 
+typedef struct{
+    int num_of_items_in_pantry;
+    int num_of_items_in_fridge;
+} cookies;
+
+typedef struct {
+    int num_of_items_in_pantry;
+    int num_of_items_in_fridge;
+} pancakes;
+
+typedef struct {
+    int num_of_items_in_pantry;
+    int num_of_items_in_fridge;
+} homemadePizzaDough;
+
+typedef struct {
+    int num_of_items_in_pantry;
+    int num_of_items_in_fridge;
+} softPretzels;
+
+typedef struct {
+    int num_of_items_in_pantry;
+    int num_of_items_in_fridge;
+} cinnamonRolls;
+
+cookies cookiesRecipe = {
+    2,
+    2
+};
+
+pancakes pancakesRecipe = {
+    4,
+    2
+};
+
+homemadePizzaDough pizzaDoughRecipe = {
+    3,
+    0
+};
+
+softPretzels softPretzelsRecipe = {
+    5,
+    1
+};
+
+cinnamonRolls cinnamonRollsRecipe = {
+    4,
+    2
+};
+
+
 const int NUM_COLORS = 6;
 const char* RESET_COLOR = "\033[0m"; // Reset to default color
 
