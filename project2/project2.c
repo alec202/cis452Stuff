@@ -122,6 +122,14 @@ typedef struct {
     int num_of_items_in_fridge;
 } cinnamonRolls;
 
+typedef struct {
+    int semNumForBowls;
+    int semNumForSpoons;
+    int semNumForMixers;
+} semNumValuesForKitchenResources;
+
+semNumValuesForKitchenResources semaphoreNumValuesForKitchenResourc = {0, 1, 2};
+
 // Initialize recipe requirements 
 cookies cookiesRecipe = {2, 2};                   // Flour, sugar, eggs, butter
 pancakes pancakesRecipe = {4, 3};                 // Flour, sugar, baking soda, salt, eggs, milk, butter
@@ -287,7 +295,7 @@ void* baker_function(void* arg) {
     }
 
     // Collect kitchen resources
-    // All recipes need a bowl and mixer
+    // All recipes need a bowl, mixer, and spoon
     sem_wait(kitchen_semid, 0); // Acquire bowl
     if (kitchen_ptr->bowls > 0) {
         kitchen_ptr->bowls--;
@@ -299,7 +307,7 @@ void* baker_function(void* arg) {
         resources->has_bowl = 0;
     }
     print_baker_state(baker_id, resources, recipe_type);
-
+// NEED TO INSERT THE CODE TO ACQUIRE A SPOON HERE.
     sem_wait(kitchen_semid, 2); // Acquire mixer
     if (kitchen_ptr->mixers > 0) {
         kitchen_ptr->mixers--;
@@ -311,6 +319,8 @@ void* baker_function(void* arg) {
         resources->has_mixer = 0;
     }
     print_baker_state(baker_id, resources, recipe_type);
+
+
 
     //recipe completion
     printf("Baker %ld completed %s\n", baker_id, recipe_names[recipe_type]);
@@ -371,7 +381,7 @@ int main() {
         free(bakers);
         return 1;
     }
-    if (semctl(fridge_semid, 0, SETVAL, 1) < 0) {
+    if (semctl(fridge_semid, 0, SETVAL, 2) < 0) {
         perror("Fridge semctl SETVAL failed");
         semctl(pantry_semid, 0, IPC_RMID);
         semctl(fridge_semid, 0, IPC_RMID);
