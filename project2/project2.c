@@ -81,6 +81,7 @@ typedef struct {
     int kitchen_semid;          // Semaphore ID for kitchen resources
     int recipe_semid;           // Semaphore ID for recipe counter
     BakerResources* resources;  // Pointer to baker's resources
+    const char* color;
 } BakerData;
 
 // Array of ANSI color codes
@@ -123,7 +124,7 @@ typedef struct {
 
 // Initialize recipe requirements 
 cookies cookiesRecipe = {2, 2};                   // Flour, sugar, eggs, butter
-pancakes pancakesRecipe = {4, 2};                 // Flour, sugar, baking soda, salt, eggs, milk
+pancakes pancakesRecipe = {4, 3};                 // Flour, sugar, baking soda, salt, eggs, milk, butter
 homemadePizzaDough pizzaDoughRecipe = {3, 0};     // Flour, yeast, salt
 softPretzels softPretzelsRecipe = {5, 1};         // Flour, sugar, yeast, salt, baking soda, butter
 cinnamonRolls cinnamonRollsRecipe = {4, 2};       // Flour, sugar, yeast, cinnamon, eggs, butter
@@ -198,8 +199,8 @@ void* baker_function(void* arg) {
             if (pantry_ptr->flour > 0) {
                 pantry_ptr->flour--;
                 resources->flour++;
-                printf("Baker %ld took 1 flour from pantry. Pantry flour left: %d\n",
-                       baker_id, pantry_ptr->flour);
+                printf("%sBaker %ld took 1 flour from pantry. Pantry flour left: %d\n",
+                       data->baker_id, pantry_ptr->flour);
             } else {
                 printf("Baker %ld found no flour in pantry.\n", baker_id);
             }
@@ -244,6 +245,38 @@ void* baker_function(void* arg) {
             break;
 
         case PANCAKES:
+        // Flour, sugar, baking soda, salt, eggs, milk, Butter
+            sem_wait(pantry_semid, 0); // Enter pantry
+            if (pantry_ptr->flour > 0) {
+                // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
+                pantry_ptr->flour;
+                resources->flour++;
+                printf("Baker %ld took 1 flour from pantry. Pantry flour left: %d\n",
+                       baker_id, pantry_ptr->flour);
+            } else {
+                printf("Baker %ld found no flour in pantry.\n", baker_id);
+            }
+            sem_signal(pantry_semid, 0); // Exit pantry
+            // we have acquired flour, lets get sugar
+            print_baker_state(baker_id, resources, recipe_type);
+
+            sem_wait(pantry_semid, 0); // Enter pantry
+            if (pantry_ptr->flour > 0) {
+                // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
+                pantry_ptr->sugar;
+                resources->sugar++;
+                printf("Baker %ld took sugar from pantry.",
+                       baker_id);
+            } else {
+                printf("Baker %ld found no sugar in pantry.\n", baker_id);
+            }
+            sem_signal(pantry_semid, 0); // Exit pantry
+            print_baker_state(baker_id, resources, recipe_type);
+            // we now have flour aand sugar, let's acquire baking soda
+
+
+
+
             
         case PIZZA_DOUGH:
             
@@ -565,6 +598,10 @@ int main() {
         bdata->fridge_semid = fridge_semid;
         bdata->kitchen_semid = kitchen_semid;
         bdata->recipe_semid = recipe_semid;
+        const char* colorForThisBaker = COLORS[bdata->baker_id % NUM_COLORS]; // Select color based on baker ID
+        bdata->color = colorForThisBaker;
+
+
         bdata->resources = malloc(sizeof(BakerResources));
         if (bdata->resources == NULL) {
             perror("Failed to allocate BakerResources");
