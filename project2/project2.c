@@ -207,7 +207,7 @@ void* baker_function(void* arg) {
             if (pantry_ptr->flour > 0) {
                 pantry_ptr->flour--;
                 resources->flour++;
-                printf("%sBaker %ld took 1 flour from pantry. Pantry flour left: %d\n",
+                printf("Baker %ld took 1 flour from pantry. Pantry flour left: %d\n",
                        data->baker_id, pantry_ptr->flour);
             } else {
                 printf("Baker %ld found no flour in pantry.\n", baker_id);
@@ -257,11 +257,11 @@ void* baker_function(void* arg) {
             sem_wait(pantry_semid, 0); // Enter pantry
             if (pantry_ptr->flour > 0) {
                 // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
-                pantry_ptr->flour;
                 resources->flour++;
                 printf("Baker %ld took 1 flour from pantry. Pantry flour left: %d\n",
                        baker_id, pantry_ptr->flour);
             } else {
+                // these edge cases for fridge and pantry items should never actually be executed (see line 259).
                 printf("Baker %ld found no flour in pantry.\n", baker_id);
             }
             sem_signal(pantry_semid, 0); // Exit pantry
@@ -270,21 +270,83 @@ void* baker_function(void* arg) {
 
             sem_wait(pantry_semid, 0); // Enter pantry
             if (pantry_ptr->flour > 0) {
+                // time to get sugar.
                 // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
-                pantry_ptr->sugar;
                 resources->sugar++;
-                printf("Baker %ld took sugar from pantry.",
-                       baker_id);
+                printf("%sBaker %ld took sugar from pantry.%s\n", data->color,
+                       baker_id, RESET_COLOR);
             } else {
                 printf("Baker %ld found no sugar in pantry.\n", baker_id);
             }
             sem_signal(pantry_semid, 0); // Exit pantry
             print_baker_state(baker_id, resources, recipe_type);
-            // we now have flour aand sugar, let's acquire baking soda
+            // we now have flour and sugar, let's acquire baking soda
 
+            sem_wait(pantry_semid, 0); // Enter pantry
+            if (pantry_ptr->baking_soda > 0) {
+                // time to get sugar.
+                // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
+                resources->baking_soda++;
+                printf("%sBaker %ld took baking soda from pantry.%s\n", data->color,
+                       baker_id, RESET_COLOR);
+            } else {
+                printf("Baker %ld found no baking soda in pantry.\n", baker_id);
+            }
+            sem_signal(pantry_semid, 0); // Exit pantry
+            print_baker_state(baker_id, resources, recipe_type);
+            // we now have flour, sugar and baking soda, let's acquire salt
 
+            sem_wait(pantry_semid, 0); // Enter pantry
+            if (pantry_ptr->salt > 0) {
+                // time to get sugar.
+                // Professor said assume we have unlimited pantry and fridge items, so we don't need to actually decrement it from our pantry.
+                resources->salt++;
+                printf("%sBaker %ld took salt from pantry.%s\n", data->color,
+                       baker_id, RESET_COLOR);
+            } else {
+                printf("Baker %ld found no salt in pantry.\n", baker_id);
+            }
+            sem_signal(pantry_semid, 0); // Exit pantry
+            print_baker_state(baker_id, resources, recipe_type);
+            // we now have flour, sugar, baking soda, and salt. let's acquire an egg.
 
+            sem_wait(fridge_semid, 0); // Enter fridge
+            if (fridge_ptr->eggs > 0) {
+                resources->eggs++;
+                printf("%sBaker %ld took 1 egg from fridge. %s\n", data->color,
+                       baker_id, RESET_COLOR);
+            } else {
+                printf("Baker %ld found no eggs in fridge.\n", baker_id);
+            }
+            sem_signal(fridge_semid, 0); // Exit fridge
+            print_baker_state(baker_id, resources, recipe_type);
 
+            // we now have flour, sugar, baking soda, salt, and egg. Let's acquire milk.
+            sem_wait(fridge_semid, 0); // Enter fridge
+            if (fridge_ptr->milk > 0) {
+                resources->milk++;
+                printf("%sBaker %ld took 1 milk from fridge.%s\n", data->color,
+                       baker_id, RESET_COLOR);
+            } else {
+                printf("Baker %ld found no milk in fridge.\n", baker_id);
+            }
+            sem_signal(fridge_semid, 0); // Exit fridge
+            print_baker_state(baker_id, resources, recipe_type);
+
+            // we now have flour, sugar, baking soda, salt, egg, and milk. Let's acquire butter.
+            sem_wait(fridge_semid, 0); // Enter fridge
+            if (fridge_ptr->butter > 0) {
+                resources->butter++;
+                printf("%sBaker %ld took 1 butter from fridge.%s\n", data->color,
+                       baker_id, RESET_COLOR);
+            } else {
+                printf("Baker %ld found no butter in fridge.\n", baker_id);
+            }
+            sem_signal(fridge_semid, 0); // Exit fridge
+            print_baker_state(baker_id, resources, recipe_type);
+            
+            // We now have all 7 ingredients to make pancakes. Lets break out of the case and get the stuff to mix them together.
+            break;
             
         case PIZZA_DOUGH:
             
@@ -307,7 +369,20 @@ void* baker_function(void* arg) {
         resources->has_bowl = 0;
     }
     print_baker_state(baker_id, resources, recipe_type);
-// NEED TO INSERT THE CODE TO ACQUIRE A SPOON HERE.
+
+    sem_wait(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Acquire spoon
+    if (kitchen_ptr->spoons > 0) {
+        kitchen_ptr->spoons--;
+        resources->has_spoon = 1;
+        printf("Baker %ld took a spoon from kitchen. Spoons left: %d\n",
+               baker_id, kitchen_ptr->spoons);
+    } else {
+        printf("Baker %ld found no spoons in kitchen.\n", baker_id);
+        resources->has_bowl = 0;
+    }
+    print_baker_state(baker_id, resources, recipe_type);
+
+    
     sem_wait(kitchen_semid, 2); // Acquire mixer
     if (kitchen_ptr->mixers > 0) {
         kitchen_ptr->mixers--;
@@ -319,6 +394,9 @@ void* baker_function(void* arg) {
         resources->has_mixer = 0;
     }
     print_baker_state(baker_id, resources, recipe_type);
+    printf("%sBaker %ld is mixing the ingredients all together%s\n", data->color, baker_id, RESET_COLOR);
+    printf("%sBaker %ld has finished mixing the ingredients together%s\n", data->color, baker_id, RESET_COLOR);
+    printf("%sBaker %ld is now going to use the oven%s\n", data->color, baker_id, RESET_COLOR);
 
 
 
@@ -574,7 +652,15 @@ int main() {
         return 1;
     }
     // Initialize recipe counter
-    counter_ptr->next_recipe = 0;
+    // Seed the random number generator with current time
+    srand(time(NULL));
+
+    // Get a random number from 0 to 5
+    int randomNumber = rand() % 6;
+
+    // counter_ptr->next_recipe = randomNumber;
+    counter_ptr->next_recipe = 0; // REPLACE THIS LINE WITH THE COMMENTED OUT LINE ABOVE WHEN READY FOR RECIPES TO BE RANDOMLY PICKED.
+    
 
     // Create baker threads
     for (long i = 0; i < num_bakers; i++) {
