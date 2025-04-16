@@ -7,12 +7,20 @@
 #include <errno.h>
 
 // ANSI color codes for output
-#define COLOR_RED "\033[0;31m"
-#define COLOR_GREEN "\033[0;32m"
-#define COLOR_YELLOW "\033[0;33m"
-#define COLOR_BLUE "\033[0;34m"
-#define COLOR_MAGENTA "\033[0;35m"
-#define COLOR_CYAN "\033[0;36m"
+#define COLOR_RED           "\033[4;38;5;52m"
+#define COLOR_GREEN         "\033[4;38;5;22m"
+#define COLOR_YELLOW        "\033[4;38;5;58m"
+#define COLOR_BLUE          "\033[4;38;5;17m"
+#define COLOR_MAGENTA       "\033[4;38;5;53m"
+#define COLOR_CYAN          "\033[4;38;5;23m"
+#define COLOR_ORANGE        "\033[4;38;5;130m"
+#define COLOR_BRIGHT_RED     "\033[0;91m"
+#define COLOR_BRIGHT_GREEN   "\033[0;92m"
+#define COLOR_BRIGHT_YELLOW  "\033[0;93m"
+#define COLOR_BRIGHT_BLUE    "\033[0;94m"
+#define COLOR_BRIGHT_MAGENTA "\033[0;95m"
+#define COLOR_BRIGHT_CYAN    "\033[0;96m"
+#define COLOR_BRIGHT_ORANGE         "\033[38;5;208m"
 
 // Enum for recipe types 
 typedef enum {
@@ -91,9 +99,17 @@ const char* COLORS[] = {
     COLOR_YELLOW,
     COLOR_BLUE,
     COLOR_MAGENTA,
-    COLOR_CYAN
+    COLOR_CYAN,
+    COLOR_ORANGE,
+    COLOR_BRIGHT_RED,
+    COLOR_BRIGHT_GREEN,
+    COLOR_BRIGHT_YELLOW,
+    COLOR_BRIGHT_BLUE,
+    COLOR_BRIGHT_MAGENTA,
+    COLOR_BRIGHT_CYAN,
+    COLOR_BRIGHT_ORANGE
 };
-const int NUM_COLORS = 6;
+const int NUM_COLORS = 14;
 const char* RESET_COLOR = "\033[0m";
 
 // Recipe structures defining pantry and fridge item counts
@@ -240,6 +256,7 @@ void* baker_function(void* arg) {
                     baker_id, RESET_COLOR);
             sem_signal(fridge_semid, 0);
             print_baker_state(baker_id, resources, recipe_type);
+            printf("%sBaker %ld now has all the ingredients, time to get a spoon, bowl, and a mixer%s\n", data->color, baker_id, RESET_COLOR);
             break;
 
         case PANCAKES:
@@ -334,7 +351,7 @@ void* baker_function(void* arg) {
             }
             sem_signal(fridge_semid, 0); // Exit fridge
             print_baker_state(baker_id, resources, recipe_type);
-            
+            printf("%sBaker %ld now has all the ingredients, time to get a spoon, bowl, and a mixer%s\n", data->color, baker_id, RESET_COLOR);
             // We now have all 7 ingredients to make pancakes. Lets break out of the case and get the stuff to mix them together.
             break;
             
@@ -366,6 +383,7 @@ void* baker_function(void* arg) {
             sem_signal(pantry_semid, 0); // Exit pantry
             print_baker_state(baker_id, resources, recipe_type);
             // We now have all 3 ingredients to make pizza dough. Lets break out of the case and get the stuff to mix them together.
+            printf("%sBaker %ld now has all the ingredients, time to get a spoon, bowl, and a mixer%s\n", data->color, baker_id, RESET_COLOR);
             break;
             
         case SOFT_PRETZELS:
@@ -419,6 +437,7 @@ void* baker_function(void* arg) {
             sem_signal(fridge_semid, 0); // Exit fridge
             print_baker_state(baker_id, resources, recipe_type);
             // we have acquired flour, sugar, salt, yeast, baking soda, and an egg. Lets break out of the case and get the stuff to mix them together.
+            printf("%sBaker %ld now has all the ingredients, time to get a spoon, bowl, and a mixer%s\n", data->color, baker_id, RESET_COLOR);
             break;
 
 
@@ -471,47 +490,34 @@ void* baker_function(void* arg) {
         sem_signal(fridge_semid, 0); // Exit fridge
         print_baker_state(baker_id, resources, recipe_type);
         // we have acquired flour, sugar, salt, cinnamon, eggs, and butter. Lets break out of the case and get the stuff to mix them together.
+        printf("%sBaker %ld now has all the ingredients, time to get a spoon, bowl, and a mixer%s\n", data->color, baker_id, RESET_COLOR);
         break;
     }
 
     // Collect kitchen resources
     // All recipes need a bowl, mixer, and spoon
-    sem_wait(kitchen_semid, 0); // Acquire bowl
-    if (kitchen_ptr->bowls > 0) {
-        kitchen_ptr->bowls--;
-        resources->has_bowl = 1;
-        printf("Baker %ld took a bowl from kitchen. Bowls left: %d\n",
-               baker_id, kitchen_ptr->bowls);
-    } else {
-        printf("Baker %ld found no bowls in kitchen.\n", baker_id);
-        resources->has_bowl = 0;
-    }
-    print_baker_state(baker_id, resources, recipe_type);
-
-    sem_wait(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Acquire spoon
-    if (kitchen_ptr->spoons > 0) {
-        kitchen_ptr->spoons--;
-        resources->has_spoon = 1;
-        printf("Baker %ld took a spoon from kitchen. Spoons left: %d\n",
-               baker_id, kitchen_ptr->spoons);
-    } else {
-        printf("Baker %ld found no spoons in kitchen.\n", baker_id);
-        resources->has_bowl = 0;
-    }
-    print_baker_state(baker_id, resources, recipe_type);
-
-    
+    printf("%sBaker %ld is trying to get a mixer%s\n", data->color, baker_id, RESET_COLOR);
     sem_wait(kitchen_semid, 2); // Acquire mixer
-    if (kitchen_ptr->mixers > 0) {
-        kitchen_ptr->mixers--;
         resources->has_mixer = 1;
         printf("Baker %ld took a mixer from kitchen. Mixers left: %d\n",
                baker_id, kitchen_ptr->mixers);
-    } else {
-        printf("Baker %ld found no mixers in kitchen.\n", baker_id);
-        resources->has_mixer = 0;
-    }
     print_baker_state(baker_id, resources, recipe_type);
+
+
+    printf("%sBaker %ld is trying to get a bowl%s\n", data->color, baker_id, RESET_COLOR);
+    sem_wait(kitchen_semid, 0); // Acquire bowl
+        resources->has_bowl = 1;
+        printf("Baker %ld took a bowl from kitchen. Bowls left: %d\n",
+               baker_id, kitchen_ptr->bowls);
+    print_baker_state(baker_id, resources, recipe_type);
+
+    printf("%sBaker %ld is trying to get a spoon%s\n", data->color, baker_id, RESET_COLOR);
+    sem_wait(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Acquire spoon
+        resources->has_spoon = 1;
+        printf("Baker %ld took a spoon from kitchen. Spoons left: %d\n",
+               baker_id, kitchen_ptr->spoons);
+    print_baker_state(baker_id, resources, recipe_type);
+
     printf("%sBaker %ld is mixing the ingredients all together%s\n", data->color, baker_id, RESET_COLOR);
     printf("%sBaker %ld has finished mixing the ingredients together%s\n", data->color, baker_id, RESET_COLOR);
     printf("%sBaker %ld is now going to use the oven%s\n", data->color, baker_id, RESET_COLOR);
@@ -521,16 +527,21 @@ void* baker_function(void* arg) {
     //recipe completion
     printf("Baker %ld completed %s\n", baker_id, recipe_names[recipe_type]);
 
-    // Return kitchen resources to allow other bakers to use them
-    if (resources->has_bowl) {
-        sem_signal(kitchen_semid, 0); // Release bowl
-        kitchen_ptr->bowls++;
+    // Return mixer resource to allow other bakers to use them
+    if (resources->has_mixer) {
+        sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForMixers); // Release mixer
     }
 
-    if (resources->has_mixer) {
-        sem_signal(kitchen_semid, 2); // Release mixer
-        kitchen_ptr->mixers++;
+    // Return spoon resource to allow other bakers to use them
+    if (resources->has_spoon) {
+        sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Release spoon
     }
+
+    // Return bowl resource to allow other bakers to use them
+    if (resources->has_bowl) {
+        sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForBowls); // Release bowl
+    }
+
 
     // Free thread-specific memory
     free(data->resources);
