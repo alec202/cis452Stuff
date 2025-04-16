@@ -92,6 +92,7 @@ typedef struct {
     BakerResources* resources;  // Pointer to baker's resources
     const char* color;
     int numRecipesCompleted;
+    int has_been_ramsied;
 } BakerData;
 
 // Array of ANSI color codes
@@ -521,22 +522,63 @@ void* baker_function(void* arg) {
                 baker_id, kitchen_ptr->spoons);
         print_baker_state(baker_id, resources, recipe_type);
 
+        // Let's make baker 0 the ramsied chance one.
+        if (baker_id == 0){
+            if (recipe_type == COOKIES && data->has_been_ramsied == 0){
+                printf("GET RAMSIED!! RESTARTTTTTT!!!\n");
+                printf("%sBaker %ld got RAMSIED and has to release all resources and restart their current recipe, %s, from scratch%s\n", data->color, baker_id, recipe_names[recipe_type], RESET_COLOR);
+                data->resources->baking_soda = 0;
+                data->resources->butter = 0;
+                data->resources->cinnamon = 0;
+                data->resources->eggs = 0;
+                data->resources->flour = 0;
+
+                // Return mixer resource to allow other bakers to use them
+                if (resources->has_mixer) {
+                    sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForMixers); // Release mixer
+                    data->resources->has_mixer = 0;
+                }
+
+                // Return spoon resource to allow other bakers to use them
+                if (resources->has_spoon) {
+                    sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Release spoon
+                    data->resources->has_spoon = 0;
+                }
+
+                // Return bowl resource to allow other bakers to use them
+                if (resources->has_bowl) {
+                    sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForBowls); // Release bowl
+                    data->resources->has_bowl = 0;
+                }
+
+                data->resources->milk = 0;
+                data->resources->salt = 0;
+                data->resources->sugar = 0;
+                data->resources->yeast = 0;
+                data->has_been_ramsied = 1;
+                continue;
+            }
+        }
+
         printf("%sBaker %ld is mixing the ingredients all together%s\n", data->color, baker_id, RESET_COLOR);
         printf("%sBaker %ld has finished mixing the ingredients together%s\n", data->color, baker_id, RESET_COLOR);
         
         // Return mixer resource to allow other bakers to use them
         if (resources->has_mixer) {
             sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForMixers); // Release mixer
+            data->resources->has_mixer = 0;
         }
 
         // Return spoon resource to allow other bakers to use them
         if (resources->has_spoon) {
             sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Release spoon
+            data->resources->has_spoon = 0;
         }
 
         // Return bowl resource to allow other bakers to use them
         if (resources->has_bowl) {
             sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForBowls); // Release bowl
+            data->resources->has_bowl = 0;
         }
 
         printf("%sBaker %ld is now going to use the oven%s\n", data->color, baker_id, RESET_COLOR);
@@ -552,6 +594,17 @@ void* baker_function(void* arg) {
         recipe_type = recipe_type % 5;
         data->recipe_type = recipe_type; // Store for printing state
         printf("%sBaker %ld assigned recipe: %s%s\n", data->color, baker_id, recipe_names[recipe_type], RESET_COLOR);
+        // release all their current stuff they're holding.
+        data->resources->baking_soda = 0;
+        data->resources->butter = 0;
+        data->resources->cinnamon = 0;
+        data->resources->eggs = 0;
+        data->resources->flour = 0;
+        data->resources->milk = 0;
+        data->resources->salt = 0;
+        data->resources->sugar = 0;
+        data->resources->yeast = 0;
+
     }
 
 
@@ -566,7 +619,7 @@ int main() {
     int num_bakers;
 
     // Prompt user for number of bakers
-    printf("Enter the number of bakers to create: ");
+    printf("Enter the number of bakers to create: 1 - 14\n");
     if (scanf("%d", &num_bakers) != 1 || num_bakers <= 0) {
         printf("Please enter a positive number.\n");
         return 1;
@@ -835,9 +888,11 @@ int main() {
         bdata->fridge_semid = fridge_semid;
         bdata->kitchen_semid = kitchen_semid;
         bdata->recipe_semid = recipe_semid;
-        bdata->numRecipesCompleted = 0;
         const char* colorForThisBaker = COLORS[bdata->baker_id % NUM_COLORS]; // Select color based on baker ID
         bdata->color = colorForThisBaker;
+        bdata->numRecipesCompleted = 0;
+        bdata->has_been_ramsied = 0;
+
 
 
         bdata->resources = malloc(sizeof(BakerResources));
