@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/shm.h>
@@ -90,6 +91,7 @@ typedef struct {
     int recipe_semid;           // Semaphore ID for recipe counter
     BakerResources* resources;  // Pointer to baker's resources
     const char* color;
+    int numRecipesCompleted;
 } BakerData;
 
 // Array of ANSI color codes
@@ -520,13 +522,7 @@ void* baker_function(void* arg) {
 
     printf("%sBaker %ld is mixing the ingredients all together%s\n", data->color, baker_id, RESET_COLOR);
     printf("%sBaker %ld has finished mixing the ingredients together%s\n", data->color, baker_id, RESET_COLOR);
-    printf("%sBaker %ld is now going to use the oven%s\n", data->color, baker_id, RESET_COLOR);
-
-
-
-    //recipe completion
-    printf("Baker %ld completed %s\n", baker_id, recipe_names[recipe_type]);
-
+    
     // Return mixer resource to allow other bakers to use them
     if (resources->has_mixer) {
         sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForMixers); // Release mixer
@@ -542,6 +538,11 @@ void* baker_function(void* arg) {
         sem_signal(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForBowls); // Release bowl
     }
 
+    printf("%sBaker %ld is now going to use the oven%s\n", data->color, baker_id, RESET_COLOR);
+    sleep(2);
+    printf("%sBaker %lds Recipe %s has finished cooking in the oven.%s\n\n", data->color, data->baker_id,recipe_names[data->recipe_type + data->numRecipesCompleted], RESET_COLOR);
+    //recipe completion
+    printf("\n%sBaker %ld completed %s.%s\n", data->color, baker_id, recipe_names[recipe_type], RESET_COLOR);
 
     // Free thread-specific memory
     free(data->resources);
@@ -823,6 +824,7 @@ int main() {
         bdata->fridge_semid = fridge_semid;
         bdata->kitchen_semid = kitchen_semid;
         bdata->recipe_semid = recipe_semid;
+        bdata->numRecipesCompleted = 0;
         const char* colorForThisBaker = COLORS[bdata->baker_id % NUM_COLORS]; // Select color based on baker ID
         bdata->color = colorForThisBaker;
 
