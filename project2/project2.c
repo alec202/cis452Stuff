@@ -738,6 +738,9 @@ int main() {
         return 1;
     }
     // Initialize pantry with 50 
+    //  This was from a previous idea b4 we knew that the pantry and fridge had an unlimited
+    // amount of items. We left it because of some if statements from the multi-threaded function
+    // and we wanted to spend our time finishing the project, rather than debugging it.
     pantry_ptr->flour = 50;
     pantry_ptr->sugar = 50;
     pantry_ptr->yeast = 50;
@@ -771,7 +774,11 @@ int main() {
         free(bakers);
         return 1;
     }
-    // Initialize fridge with 10 units of each ingredient
+    // Initialize fridge with 50 units of each ingredient
+    //  This was from a previous idea b4 we knew that the pantry and fridge had an unlimited
+    // amount of items. We left it because of some if statements from the multi-threaded function
+    // and we wanted to spend our time finishing the project, rather than debugging it.
+
     fridge_ptr->eggs = 50;
     fridge_ptr->milk = 50;
     fridge_ptr->butter = 50;
