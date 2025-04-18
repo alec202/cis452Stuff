@@ -503,23 +503,23 @@ void* baker_function(void* arg) {
         printf("%sBaker %ld is trying to get a mixer%s\n", data->color, baker_id, RESET_COLOR);
         sem_wait(kitchen_semid, 2); // Acquire mixer
             resources->has_mixer = 1;
-            printf("Baker %ld took a mixer from kitchen. Mixers left: %d\n",
-                baker_id, kitchen_ptr->mixers);
+            printf("%sBaker %ld took a mixer from kitchen. Mixers left: %d%s\n", data->color,
+                baker_id, kitchen_ptr->mixers, RESET_COLOR);
         print_baker_state(baker_id, resources, recipe_type);
 
 
         printf("%sBaker %ld is trying to get a bowl%s\n", data->color, baker_id, RESET_COLOR);
         sem_wait(kitchen_semid, 0); // Acquire bowl
             resources->has_bowl = 1;
-            printf("Baker %ld took a bowl from kitchen. Bowls left: %d\n",
-                baker_id, kitchen_ptr->bowls);
+            printf("%sBaker %ld took a bowl from kitchen. Bowls left: %d%s\n", data->color,
+                baker_id, kitchen_ptr->bowls, RESET_COLOR);
         print_baker_state(baker_id, resources, recipe_type);
 
         printf("%sBaker %ld is trying to get a spoon%s\n", data->color, baker_id, RESET_COLOR);
         sem_wait(kitchen_semid, semaphoreNumValuesForKitchenResourc.semNumForSpoons); // Acquire spoon
             resources->has_spoon = 1;
-            printf("Baker %ld took a spoon from kitchen. Spoons left: %d\n",
-                baker_id, kitchen_ptr->spoons);
+            printf("%sBaker %ld took a spoon from kitchen. Spoons left: %d%s\n", data->color,
+                baker_id, kitchen_ptr->spoons, RESET_COLOR);
         print_baker_state(baker_id, resources, recipe_type);
 
         // Let's make baker 0 the ramsied chance one.
@@ -737,13 +737,13 @@ int main() {
         free(bakers);
         return 1;
     }
-    // Initialize pantry with 10 
-    pantry_ptr->flour = 10;
-    pantry_ptr->sugar = 10;
-    pantry_ptr->yeast = 10;
-    pantry_ptr->baking_soda = 10;
-    pantry_ptr->salt = 10;
-    pantry_ptr->cinnamon = 10;
+    // Initialize pantry with 50 
+    pantry_ptr->flour = 50;
+    pantry_ptr->sugar = 50;
+    pantry_ptr->yeast = 50;
+    pantry_ptr->baking_soda = 50;
+    pantry_ptr->salt = 50;
+    pantry_ptr->cinnamon = 50;
 
     // Create shared memory for fridge
     int fridge_shmid = shmget(IPC_PRIVATE, sizeof(Fridge), IPC_CREAT | 0666);
@@ -772,9 +772,9 @@ int main() {
         return 1;
     }
     // Initialize fridge with 10 units of each ingredient
-    fridge_ptr->eggs = 10;
-    fridge_ptr->milk = 10;
-    fridge_ptr->butter = 10;
+    fridge_ptr->eggs = 50;
+    fridge_ptr->milk = 50;
+    fridge_ptr->butter = 50;
 
     // Create shared memory for kitchen
     int kitchen_shmid = shmget(IPC_PRIVATE, sizeof(Kitchen), IPC_CREAT | 0666);
@@ -852,8 +852,8 @@ int main() {
     // Get a random number from 0 to 5
     int randomNumber = rand() % 6;
 
-    // counter_ptr->next_recipe = randomNumber;
-    counter_ptr->next_recipe = 0; // REPLACE THIS LINE WITH THE COMMENTED OUT LINE ABOVE WHEN READY FOR RECIPES TO BE RANDOMLY PICKED.
+    counter_ptr->next_recipe = randomNumber;
+    // counter_ptr->next_recipe = 0; // REPLACE THIS LINE WITH THE COMMENTED OUT LINE ABOVE WHEN READY FOR RECIPES TO BE RANDOMLY PICKED.
     
 
     // Create baker threads
