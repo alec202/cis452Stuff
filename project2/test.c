@@ -7,7 +7,7 @@
 #define YELLOW "\033[0;33m"
 #define BLUE "\033[0;34m"
 #define MAGENTA "\033[0;35m"
-#define CYAN "\033[0;36m"
+#define CYAN "\033[0;35m"
 #define RESET "\033[0m"
 
 // Structure to pass thread ID and color code
@@ -26,7 +26,7 @@ void* print_message(void* arg) {
 int main() {
     pthread_t threads[5];
     thread_data thread_args[5];
-    char* colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA};
+    char* colors[] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN};
 
     // Create and run threads
     for (int i = 0; i < 5; i++) {
